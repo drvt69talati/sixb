@@ -32,6 +32,48 @@ function reduceChunks(chunks: readonly Record<string, unknown>[]) {
 }
 
 describe("liveRunReducer", () => {
+  test("rebuilds a turn opened late from its finished steps, then streams the current step", () => {
+    // What the reader rebuilt from the live stream's oldest records is replaced.
+    const partial = reduceChunks([{ type: "text-delta", id: "text", delta: "tail of an old step" }])
+    let state = liveRunReducer(partial, {
+      type: "event",
+      event: event({
+        type: "agent.ui.steps",
+        throughChunkIndex: 9,
+        chunks: [
+          { type: "start-step" },
+          { type: "text-delta", id: "text", delta: "Spawning researchers." },
+          { type: "tool-input-start", toolCallId: "call-1", toolName: "spawn_agent" },
+          {
+            type: "tool-input-available",
+            toolCallId: "call-1",
+            toolName: "spawn_agent",
+            input: { task: "research" },
+          },
+          {
+            type: "tool-output-available",
+            toolCallId: "call-1",
+            toolName: "spawn_agent",
+            output: { id: "child" },
+          },
+        ],
+      }),
+    })
+    // The current step's start was dropped from the stream: its text, under the id the first step
+    // used, is still a part of its own.
+    state = liveRunReducer(state, {
+      type: "event",
+      event: uiChunk({ type: "text-delta", id: "text", delta: "Writing mockups." }),
+    })
+
+    expect(state.active).toBe(true)
+    expect(
+      state.parts.map((part) => (part.kind === "tool" ? part.tool.toolName : part.kind))
+    ).toEqual(["text", "spawn_agent", "text"])
+    expect(state.parts[0]).toEqual({ kind: "text", text: "Spawning researchers." })
+    expect(state.parts[2]).toEqual({ kind: "text", text: "Writing mockups." })
+  })
+
   test("keeps post-tool text ordered after the tool when the SDK reuses text ids", () => {
     const state = reduceChunks([
       { type: "start-step" },

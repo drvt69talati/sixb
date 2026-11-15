@@ -99,6 +99,8 @@ function reduceEvent(state: LiveRunState, event: AgentRunStreamEvent): LiveRunSt
       return { ...state, compacting: false, contextFull: false }
     case "agent.ui.chunk":
       return applyChunk(state, event.chunk)
+    case "agent.ui.steps":
+      return applySteps(state, event.runId, event.chunks)
     case "agent.message.finalized":
       return { ...state, finalizedMessageId: event.messageId }
     case "agent.run.finished":
@@ -114,6 +116,29 @@ function reduceEvent(state: LiveRunState, event: AgentRunStreamEvent): LiveRunSt
     default:
       return state
   }
+}
+
+/**
+ * The turn's finished steps, sent first to a reader who opened it late: they replace whatever it
+ * rebuilt so far. What streams next belongs to a later step, even when that step's start was dropped
+ * from the stream, so it opens a step of its own.
+ */
+function applySteps(
+  state: LiveRunState,
+  runId: string,
+  chunks: readonly ModelUiChunk[]
+): LiveRunState {
+  let next: LiveRunState = {
+    ...state,
+    runId,
+    active: true,
+    parts: [],
+    partKeys: [],
+    stepIndex: 0,
+    stepStart: 0,
+  }
+  for (const chunk of chunks) next = applyChunk(next, chunk)
+  return { ...next, stepIndex: next.stepIndex + 1, stepStart: next.parts.length }
 }
 
 type TextChunk = Extract<ModelUiChunk, { readonly type: "text-start" | "text-delta" | "text-end" }>

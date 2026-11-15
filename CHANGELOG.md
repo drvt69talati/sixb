@@ -12,8 +12,17 @@ Sixb packages are versioned independently. Each release entry names the packages
   `results` and `cost_per_result`. Marketing API limits (codes 80000–80014) are retried like
   Graph throttling.
 
+- A running Agent turn opened late, or after the stream dropped its place, shows everything it did,
+  its sub-agents included, instead of its last few seconds. The worker logs each finished step to
+  the run's `agents.runs.<runId>.steps` stream, and `/ws/agents` sends a `run.steps` frame before
+  the live records. Deltas streamed within 50 ms go out as one record: a DeepSeek turn wrote one
+  record per 4 characters, about 90,000 for 19 minutes.
+
 ### Upgrade notes
 
+- `AgentRunStreamEvent` has a new `agent.ui.steps` member, which `useAgentRunStream` and
+  `createAgentRunSocket` deliver to `onEvent`. A reducer over these events should replace its
+  parts with the event's chunks (see the app's `liveRunReducer`).
 - `MetaClient` has a new `ads` member; Page and Instagram clients have none. A project type that
   omits members from `MetaClient` to describe those clients (`Omit<MetaClient, "pages">`) omits
   `"ads"` too.

@@ -1,4 +1,4 @@
-import type { Broker } from "../broker"
+import type { Broker, BrokerStreamDefinition } from "../broker"
 import { createSixbError } from "../errors/internal"
 import type { JsonValue } from "../json"
 import type {
@@ -9,12 +9,21 @@ import type {
 import type { AgentCompactionFailureCode, AgentRunStreamEvent, ModelUiChunk } from "./streams"
 import {
   agentRunFinishedEvent,
+  agentRunStepsStreamDefinition,
+  agentRunStepsStreamId,
   agentRunStreamDefinition,
   agentRunStreamEventBase,
   agentRunStreamId,
   agentRunStreamIdempotencyKey,
   publishAgentRunActivity,
 } from "./streams/protocol"
+import {
+  appendCompacted,
+  continuesDelta,
+  type DeltaChunk,
+  isDeltaChunk,
+  mergeDeltas,
+} from "./streams/steps"
 
 export interface CompactionStartedInput {
   /** A conversation's turn, or a child compacting its own thread. */
@@ -67,8 +76,14 @@ export const NOOP_STREAM_SINK: StreamSink = {
 export function createBrokerStreamSink(input: {
   readonly broker: Broker
   readonly projectId: string
+  /** How long deltas of one span wait to go out as one record; 0 publishes each as it comes. */
+  readonly deltaWindowMs?: number
 }): StreamSink {
-  return new BrokerStreamSink(input.broker, input.projectId)
+  return new BrokerStreamSink(
+    input.broker,
+    input.projectId,
+    input.deltaWindowMs ?? AGENT_RUN_STREAM_DELTA_WINDOW_MS
+  )
 }
 
 /** Keeps stream delivery observational so sink failures never fail a turn. */
@@ -129,16 +144,42 @@ async function publishLifecycle(deliveries: readonly Promise<void>[]): Promise<v
   if (failure?.status === "rejected") throw failure.reason
 }
 
+/** How long the deltas of one span wait to go out as one record. */
+export const AGENT_RUN_STREAM_DELTA_WINDOW_MS = 50
+
+/** Runs one sink keeps stream state for at once: one that never finished here is dropped first. */
+const MAX_TRACKED_RUNS = 256
+
+/** What a sink keeps about one run while it streams. */
+interface RunStream {
+  readonly attempt: number
+  /** Every record of the run goes out through this chain, so they keep their order. */
+  tail: Promise<void>
+  /** Deltas of one span not published yet, under the index of the first. */
+  pending: {
+    run: AgentRunRecord
+    readonly chunkIndex: number
+    chunk: DeltaChunk
+  } | null
+  timer: ReturnType<typeof setTimeout> | undefined
+  /** The chunks published since the last step was logged, compacted. */
+  step: ModelUiChunk[]
+  /** The index of the last chunk published. */
+  lastChunkIndex: number | undefined
+}
+
 class BrokerStreamSink implements StreamSink {
   private readonly ensured = new Set<string>()
+  private readonly runs = new Map<string, RunStream>()
 
   constructor(
     private readonly broker: Broker,
-    private readonly projectId: string
+    private readonly projectId: string,
+    private readonly deltaWindowMs: number
   ) {}
 
   async publishStarted(run: AgentRunRecord): Promise<void> {
-    await this.publish({
+    await this.publishInOrder(run, {
       ...agentRunStreamEventBase(run),
       type: "agent.run.started",
       ...(run.modelId === undefined ? {} : { modelId: run.modelId }),
@@ -146,7 +187,7 @@ class BrokerStreamSink implements StreamSink {
   }
 
   async publishCompactionStarted(input: CompactionStartedInput): Promise<void> {
-    await this.publish({
+    await this.publishInOrder(input.run, {
       ...agentRunStreamEventBase(input.run),
       type: "agent.compaction.started",
       reason: input.reason,
@@ -155,7 +196,7 @@ class BrokerStreamSink implements StreamSink {
   }
 
   async publishCompactionCompleted(input: CompactionCompletedInput): Promise<void> {
-    await this.publish({
+    await this.publishInOrder(input.run, {
       ...agentRunStreamEventBase(input.run),
       type: "agent.compaction.completed",
       reason: input.reason,
@@ -166,7 +207,7 @@ class BrokerStreamSink implements StreamSink {
   }
 
   async publishCompactionFailed(input: CompactionFailedInput): Promise<void> {
-    await this.publish({
+    await this.publishInOrder(input.run, {
       ...agentRunStreamEventBase(input.run),
       type: "agent.compaction.failed",
       reason: input.reason,
@@ -174,7 +215,11 @@ class BrokerStreamSink implements StreamSink {
     })
   }
 
-  /** Publishes one live UI chunk; awaited per chunk so broker backpressure throttles the token stream. */
+  /**
+   * Publishes one live UI chunk. Deltas of one span arriving within the window go out as one record:
+   * a model streams a few characters per delta, far more often than anyone reads. Anything else
+   * first sends the deltas held, and is awaited, so broker backpressure throttles the token stream.
+   */
   async publishUiChunk(input: {
     readonly run: AgentRunRecord
     readonly chunkIndex: number
@@ -191,25 +236,29 @@ class BrokerStreamSink implements StreamSink {
       return
     }
 
-    // `chunk` is already validated JSON and every other field is a JSON primitive, so the event is
-    // JSON as-built. Publish it pre-validated so the chunk — the highest-frequency agent event, one
-    // per streamed token batch — is not serialized a second time inside `publish`.
-    await this.publish(
-      {
-        ...agentRunStreamEventBase(input.run),
-        type: "agent.ui.chunk",
-        chunkIndex: input.chunkIndex,
-        chunk,
-      },
-      { prevalidated: true }
-    )
+    const stream = this.stream(input.run)
+    const pending = stream.pending
+    if (pending && continuesDelta(pending.chunk, chunk)) {
+      pending.chunk = mergeDeltas(pending.chunk, chunk)
+      pending.run = input.run
+      return
+    }
+
+    const flushed = this.flush(stream)
+    if (isDeltaChunk(chunk) && this.deltaWindowMs > 0) {
+      stream.pending = { run: input.run, chunkIndex: input.chunkIndex, chunk }
+      stream.timer = setTimeout(() => void this.flush(stream), this.deltaWindowMs)
+      await flushed
+      return
+    }
+    await this.enqueue(stream, () => this.appendChunk(input.run, stream, input.chunkIndex, chunk))
   }
 
   async publishMessageFinalized(input: {
     readonly run: ConversationAgentRunRecord
     readonly messageId: string
   }): Promise<void> {
-    await this.publish({
+    await this.publishInOrder(input.run, {
       ...agentRunStreamEventBase(input.run),
       type: "agent.message.finalized",
       messageId: input.messageId,
@@ -220,17 +269,143 @@ class BrokerStreamSink implements StreamSink {
     if (run.status === "queued" || run.status === "running") {
       return
     }
-    await this.publish(agentRunFinishedEvent(run))
-    // This is the last event for the run, so drop its ensured-stream marker to bound the Set over a
-    // long-lived worker. Evict only after a successful append, and only on the terminal path.
-    this.ensured.delete(agentRunStreamId(run.id))
+    try {
+      await this.publishInOrder(run, agentRunFinishedEvent(run))
+    } finally {
+      // This is the last event for the run: drop what the sink kept for it, to bound a long-lived
+      // worker's memory.
+      this.forget(run.id)
+    }
+  }
+
+  /** The run's stream state, started over for a new attempt. */
+  private stream(run: AgentRunRecord): RunStream {
+    const known = this.runs.get(run.id)
+    if (known && known.attempt === run.attempt) return known
+    if (known) clearTimeout(known.timer)
+    else if (this.runs.size >= MAX_TRACKED_RUNS) {
+      const [oldest] = this.runs.keys()
+      if (oldest !== undefined) this.forget(oldest)
+    }
+
+    const stream: RunStream = {
+      attempt: run.attempt,
+      tail: Promise.resolve(),
+      pending: null,
+      timer: undefined,
+      step: [],
+      lastChunkIndex: undefined,
+    }
+    this.runs.set(run.id, stream)
+    return stream
+  }
+
+  private forget(runId: string): void {
+    clearTimeout(this.runs.get(runId)?.timer)
+    this.runs.delete(runId)
+    this.ensured.delete(agentRunStreamId(runId))
+    this.ensured.delete(agentRunStepsStreamId(runId))
+  }
+
+  /** Runs `task` after every record the run sent before it. */
+  private enqueue(stream: RunStream, task: () => Promise<void>): Promise<void> {
+    const next = stream.tail.then(task)
+    stream.tail = next.catch(() => {})
+    return next
+  }
+
+  /** Sends the deltas held, if any. Never rejects: a failed send is logged, as for any chunk. */
+  private flush(stream: RunStream): Promise<void> {
+    clearTimeout(stream.timer)
+    stream.timer = undefined
+    const pending = stream.pending
+    if (!pending) return stream.tail
+    stream.pending = null
+    return this.enqueue(stream, () =>
+      this.appendChunk(pending.run, stream, pending.chunkIndex, pending.chunk)
+    ).catch((error: unknown) => {
+      console.error(`[Sixb] Agent run '${pending.run.id}' ui chunk stream publish failed:`, error)
+    })
+  }
+
+  private async publishInOrder(run: AgentRunRecord, event: AgentRunStreamEvent): Promise<void> {
+    const stream = this.stream(run)
+    void this.flush(stream)
+    await this.enqueue(stream, () => this.publish(event))
+  }
+
+  private async appendChunk(
+    run: AgentRunRecord,
+    stream: RunStream,
+    chunkIndex: number,
+    chunk: ModelUiChunk
+  ): Promise<void> {
+    const startsStep = chunk.type === "start-step" && !chunk.retry
+    // A new step: the one before is finished, and logged for whoever opens the turn later.
+    if (startsStep && stream.step.length > 0) await this.logStep(run, stream)
+
+    // `chunk` is already validated JSON and every other field is a JSON primitive, so the event is
+    // JSON as-built. Publish it pre-validated so the chunk — the highest-frequency agent event — is
+    // not serialized a second time inside `publish`.
+    await this.publish(
+      {
+        ...agentRunStreamEventBase(run),
+        type: "agent.ui.chunk",
+        chunkIndex,
+        chunk,
+      },
+      { prevalidated: true }
+    )
+
+    stream.lastChunkIndex = chunkIndex
+    if (chunk.type === "start-step" && chunk.retry) {
+      // A step asked again drops what its first call streamed, as a reader does.
+      const [head] = stream.step
+      stream.step = head?.type === "start-step" ? [head] : []
+      return
+    }
+    appendCompacted(stream.step, chunk)
+  }
+
+  /**
+   * Appends the chunks since the last step logged to the run's steps stream. A failed append keeps
+   * them, so they go out with the next step: the live record is published either way.
+   */
+  private async logStep(run: AgentRunRecord, stream: RunStream): Promise<void> {
+    if (stream.lastChunkIndex === undefined) return
+    const event: AgentRunStreamEvent = {
+      ...agentRunStreamEventBase(run),
+      type: "agent.ui.steps",
+      throughChunkIndex: stream.lastChunkIndex,
+      chunks: stream.step,
+    }
+    try {
+      const definition = agentRunStepsStreamDefinition(run.id)
+      await this.ensure(definition)
+      await this.broker.append({
+        projectId: this.projectId,
+        streamId: definition.id,
+        records: [
+          {
+            name: event.type,
+            key: run.id,
+            // Its chunks were validated as they were published.
+            payload: event as unknown as JsonValue,
+            idempotencyKey: agentRunStreamIdempotencyKey(event),
+          },
+        ],
+      })
+      stream.step = []
+    } catch (error) {
+      console.error(`[Sixb] Agent run '${run.id}' step log publish failed:`, error)
+    }
   }
 
   private async publish(
     event: AgentRunStreamEvent,
     options: { readonly prevalidated?: boolean } = {}
   ): Promise<void> {
-    await this.ensure(event.runId)
+    await this.ensure(agentRunStreamDefinition(event.runId))
     // Broker payloads are plain JSON; keep SDK-specific chunk shapes opaque at this boundary. A
     // pre-validated event (its only opaque field, the chunk, was already encoded by the caller) is
     // already JSON, so it is forwarded as-is instead of being serialized a second time.
@@ -253,16 +428,12 @@ class BrokerStreamSink implements StreamSink {
     })
   }
 
-  private async ensure(runId: string): Promise<void> {
-    const streamId = agentRunStreamId(runId)
-    if (this.ensured.has(streamId)) {
+  private async ensure(stream: BrokerStreamDefinition): Promise<void> {
+    if (this.ensured.has(stream.id)) {
       return
     }
-    await this.broker.ensureStream({
-      projectId: this.projectId,
-      stream: agentRunStreamDefinition(runId),
-    })
-    this.ensured.add(streamId)
+    await this.broker.ensureStream({ projectId: this.projectId, stream })
+    this.ensured.add(stream.id)
   }
 }
 
