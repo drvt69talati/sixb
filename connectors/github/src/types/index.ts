@@ -125,22 +125,33 @@ export type {
 export type { ListMilestonesOptions, RepositoryMilestonesApi } from "./milestones"
 export type { GitHubConnectorOptions } from "./options"
 export type {
+  CreatePullRequestCommentInput,
+  CreatePullRequestInput,
+  CreatePullRequestReviewCommentInput,
+  CreatePullRequestReviewInput,
   GetPullRequestOptions,
   GitHubPullRequest,
   GitHubPullRequestBranch,
+  GitHubPullRequestComment,
+  GitHubPullRequestCommentSide,
   GitHubPullRequestDetail,
   GitHubPullRequestMergeMethod,
   GitHubPullRequestMergeRefusal,
   GitHubPullRequestMergeResult,
   GitHubPullRequestReview,
+  GitHubPullRequestReviewEvent,
   GitHubPullRequestReviewState,
   GitHubPullRequestSort,
   GitHubPullRequestState,
+  ListPullRequestCommentsOptions,
   ListPullRequestReviewsOptions,
   ListPullRequestsOptions,
   MergePullRequestInput,
+  ReplyToPullRequestCommentInput,
+  RepositoryPullRequestCommentsApi,
   RepositoryPullRequestReviewsApi,
   RepositoryPullRequestsApi,
+  RequestReviewersInput,
 } from "./pulls"
 export type {
   CreateReleaseInput,
