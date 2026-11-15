@@ -144,6 +144,7 @@ const SHIPPED_MIGRATIONS = [
   "103-script-executions",
   "104-artifact-pdfs",
   "105-guest-comment-links",
+  "106-agent-thread-reads",
 ]
 
 const steps = postgresStorageMigrations.steps
@@ -837,6 +838,7 @@ describe("Postgres storage migrations", () => {
           activeRunId: child.active,
           lastMessageAt: new Date("2026-07-01T12:00:01.000Z"),
           messageCount: 1,
+          lastMessageSeq: 1,
           createdAt: new Date("2026-07-01T12:00:01.000Z"),
           updatedAt: new Date(
             child.active ? "2026-07-01T12:00:01.000Z" : "2026-07-01T12:00:05.000Z"
