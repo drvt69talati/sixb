@@ -14314,6 +14314,275 @@ export type HeadAgentMessageFileContentResponses = {
   206: unknown
 }
 
+export type EditAgentThreadMessageData = {
+  body: {
+    text?: string
+    model?: {
+      provider: string
+      modelId: string
+    }
+    reasoning?:
+      | "provider-default"
+      | "none"
+      | "minimal"
+      | "low"
+      | "medium"
+      | "high"
+      | "xhigh"
+      | "max"
+      | {
+          budgetTokens: number
+        }
+    timeZone?: string
+    locale?: string
+    approvalMode?: "manual" | "accept-edits" | "auto"
+    attachments?: Array<{
+      blobId: string
+      digest: string
+      sizeBytes: number
+      fileName?: string
+      mediaType?: string
+      logicalPath?: string
+    }>
+    context?: Array<{
+      context:
+        | {
+            kind: "object"
+            ref: {
+              objectTypeId: string
+              primaryId: string
+            }
+            /**
+             * Shown in the chat instead of the object's title. Never sent to the model.
+             */
+            label?: string
+          }
+        | {
+            kind: "app-state"
+            id: string
+            label: string
+            description: string
+            /**
+             * Any JSON-compatible value.
+             */
+            value:
+              | string
+              | number
+              | boolean
+              | Array<unknown>
+              | {
+                  [key: string]: unknown
+                }
+              | null
+          }
+      origin: "ambient" | "explicit"
+    }>
+    nextMessageId?: string
+  }
+  path: {
+    threadId: string
+    messageId: string
+  }
+  query?: never
+  url: "/api/agent-threads/{threadId}/messages/{messageId}/edit"
+}
+
+export type EditAgentThreadMessageErrors = {
+  /**
+   * Response for status 400
+   */
+  400: {
+    error: string
+    code?: string
+  }
+  /**
+   * Response for status 403
+   */
+  403: {
+    error: string
+    code?: string
+  }
+  /**
+   * Response for status 404
+   */
+  404: {
+    error: string
+  }
+  /**
+   * Response for status 409
+   */
+  409: {
+    error: string
+    code?: string
+  }
+  /**
+   * Response for status 429
+   */
+  429: {
+    error: string
+    /**
+     * Stable machine-readable failure code for programmatic handling.
+     */
+    code: "ai.usage_limit_exceeded" | "ai.usage_limit_unavailable"
+    /**
+     * Any JSON-compatible value.
+     */
+    details?:
+      | string
+      | number
+      | boolean
+      | Array<unknown>
+      | {
+          [key: string]: unknown
+        }
+      | null
+  }
+  /**
+   * Response for status 501
+   */
+  501: {
+    error: string
+  }
+}
+
+export type EditAgentThreadMessageError =
+  EditAgentThreadMessageErrors[keyof EditAgentThreadMessageErrors]
+
+export type EditAgentThreadMessageResponses = {
+  /**
+   * Response for status 202
+   */
+  202: {
+    run: {
+      id: string
+      projectId: string
+      kind: "conversation" | "subagent"
+      threadId: string
+      triggerMessageId: string
+      parentRunId?: string
+      requestedBy?: {
+        type: "user" | "serviceAccount"
+        id: string
+      }
+      status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+      model?: {
+        provider: string
+        modelId: string
+      }
+      tier?: "light" | "standard" | "heavy"
+      reasoning?:
+        | "provider-default"
+        | "none"
+        | "minimal"
+        | "low"
+        | "medium"
+        | "high"
+        | "xhigh"
+        | "max"
+        | {
+            budgetTokens: number
+          }
+      approvalMode?: "manual" | "accept-edits" | "auto"
+      runsOn?: "computer"
+      modelId?: string
+      finishReason?:
+        | "stop"
+        | "length"
+        | "content-filter"
+        | "tool-calls"
+        | "timeout"
+        | "interrupted"
+        | "awaiting_approval"
+        | "awaiting_answer"
+        | "error"
+        | "other"
+        | "unknown"
+      usage?: {
+        inputTokens?: number
+        outputTokens?: number
+        totalTokens?: number
+        uncachedInputTokens?: number
+        cacheReadInputTokens?: number
+        cacheWriteInputTokens?: number
+        textOutputTokens?: number
+        reasoningOutputTokens?: number
+        /**
+         * Audio content duration in milliseconds; not billed duration.
+         */
+        audioDurationMs?: number
+        /**
+         * Output tokens that encode generated images, within outputTokens.
+         */
+        imageOutputTokens?: number
+        /**
+         * Output tokens that encode generated audio, within outputTokens.
+         */
+        audioOutputTokens?: number
+        /**
+         * Images the call returned.
+         */
+        outputImages?: number
+        /**
+         * Input characters, counted by the provider's own billing rule.
+         */
+        inputCharacters?: number
+        reportingStatus: "complete" | "partial" | "unavailable"
+      }
+      cost?: {
+        amounts: Array<{
+          currency: string
+          amountNanos: string
+        }>
+        ratedCallCount: number
+        unpriceableCallCount: number
+        unvaluedCallCount: number
+      }
+      diagnostics?: Array<{
+        code: "step_limit_reached" | "output_limit_reached"
+        severity: "warning" | "error"
+        scope: "run"
+        message: string
+      }>
+      error?: {
+        code:
+          | "internal.unexpected"
+          | "runtime.cancelled"
+          | "agent.context_limit_exceeded"
+          | "agent.execution_failed"
+          | "agent.step_limit_reached"
+          | "ai.usage_limit_exceeded"
+          | "ai.usage_limit_unavailable"
+        message: string
+        retryable: boolean
+        at: string
+        /**
+         * Any JSON-compatible value.
+         */
+        details?:
+          | string
+          | number
+          | boolean
+          | Array<unknown>
+          | {
+              [key: string]: unknown
+            }
+          | null
+        httpStatus?: number
+        redacted?: true
+        truncated?: true
+      }
+      attempt: number
+      streamId: string
+      createdAt: string
+      startedAt?: string
+      completedAt?: string
+    }
+  }
+}
+
+export type EditAgentThreadMessageResponse =
+  EditAgentThreadMessageResponses[keyof EditAgentThreadMessageResponses]
+
 export type CancelAgentRunData = {
   body: {
     runId: string

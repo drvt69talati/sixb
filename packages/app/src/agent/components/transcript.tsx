@@ -6,7 +6,7 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@sixb/ui/components"
-import { Fragment, memo, type ReactNode, useMemo } from "react"
+import { Fragment, memo, type ReactNode, useCallback, useEffect, useMemo, useState } from "react"
 import {
   ApprovalCardsContext,
   type HeldCall,
@@ -25,11 +25,13 @@ import {
   type ThreadDelegation,
 } from "../delegation/interpret"
 import { heldInCard } from "../delegation/model"
+import type { AgentMessageEditDraft } from "../hooks/use-agent-conversation"
 import { useAgentMessages } from "../i18n"
 import { principalKey } from "../message-authors"
 import { openQuestion } from "../questions/interpret"
 import { type QuestionTurn, QuestionTurnContext } from "../questions/question-card"
 import { CONTEXT_LIMIT_EXCEEDED } from "../run-presentation"
+import type { AgentContextEntryInput, AgentFileRef } from "../types"
 import { ApprovalCards } from "./approval-card"
 import {
   CompactionMarker,
@@ -54,6 +56,18 @@ export interface TranscriptProps {
   readonly anchorCurrentTurn?: boolean
   readonly onRetry?: () => void
   readonly onContinue?: () => void
+  /** Saved user message ids the reader may edit in place. */
+  readonly editableMessageIds?: ReadonlySet<string>
+  /** Controlled inline-edit draft, when managed by `useAgentConversation`. */
+  readonly editingMessage?: AgentMessageEditDraft | null
+  readonly onStartEditMessage?: (messageId: string) => void
+  readonly onCancelEditMessage?: () => void
+  readonly onSubmitEditMessage?: (
+    messageId: string,
+    text: string,
+    attachments: readonly AgentFileRef[],
+    context: readonly AgentContextEntryInput[]
+  ) => void
   /** Start a new thread: the way on from a conversation too long for its model. */
   readonly onNewThread?: () => void
   /**
@@ -150,11 +164,62 @@ function TranscriptView({
   anchorCurrentTurn,
   onRetry,
   onContinue,
+  editableMessageIds,
+  editingMessage,
+  onStartEditMessage,
+  onCancelEditMessage,
+  onSubmitEditMessage,
   onNewThread,
   approvals,
   moved,
   onAnswer,
 }: TranscriptProps & { readonly threadDelegation: ThreadDelegation }) {
+  const [uncontrolledEdit, setUncontrolledEdit] = useState<AgentMessageEditDraft | null>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset uncontrolled inline edit when switching threads
+  useEffect(() => {
+    setUncontrolledEdit(null)
+  }, [threadId])
+
+  const controlledEditing = editingMessage !== undefined
+  const activeEdit = controlledEditing ? editingMessage : uncontrolledEdit
+
+  const handleStartEdit = useCallback(
+    (messageId: string) => {
+      if (onStartEditMessage) {
+        onStartEditMessage(messageId)
+        return
+      }
+      const target = messages.find((entry) => entry.id === messageId && entry.role === "user")
+      if (!target) return
+      const text = target.parts
+        .map((part) => (part.type === "text" ? part.text : ""))
+        .join("")
+        .trim()
+      const attachments = target.parts.flatMap((part) =>
+        part.type === "file" ? [part.fileRef] : []
+      )
+      setUncontrolledEdit({ messageId, text, attachments, context: target.context, nonce: 1 })
+    },
+    [messages, onStartEditMessage]
+  )
+
+  const handleCancelEdit = useCallback(() => {
+    if (onCancelEditMessage) onCancelEditMessage()
+    else setUncontrolledEdit(null)
+  }, [onCancelEditMessage])
+
+  const handleSubmitEdit = useCallback(
+    (
+      messageId: string,
+      text: string,
+      attachments: readonly AgentFileRef[],
+      context: readonly AgentContextEntryInput[]
+    ) => {
+      if (!controlledEditing) setUncontrolledEdit(null)
+      onSubmitEditMessage?.(messageId, text, attachments, context)
+    },
+    [controlledEditing, onSubmitEditMessage]
+  )
   // Messages one person sends in a row name them once; an answer in between names them again.
   const continuedKeys = useMemo(() => continuedUserMessages(messages), [messages])
 
@@ -254,6 +319,23 @@ function TranscriptView({
                       message={message}
                       continued={continuedKeys.has(message.key)}
                       scrollAnchor={message.key === anchoredKey}
+                      canEdit={
+                        onSubmitEditMessage !== undefined &&
+                        message.id !== null &&
+                        (editableMessageIds === undefined || editableMessageIds.has(message.id))
+                      }
+                      editing={
+                        activeEdit !== null && message.id === activeEdit.messageId
+                          ? activeEdit
+                          : null
+                      }
+                      {...(onSubmitEditMessage
+                        ? {
+                            onStartEdit: handleStartEdit,
+                            onCancelEdit: handleCancelEdit,
+                            onSubmitEdit: handleSubmitEdit,
+                          }
+                        : {})}
                       // Only the newest answer can be continued; older ones keep their notice alone.
                       {...(message.key === newestSavedKey && onContinue
                         ? { onContinue, continuing: turn.continuing }
@@ -427,6 +509,11 @@ const TranscriptMessage = memo(function TranscriptMessage({
   message,
   continued,
   scrollAnchor,
+  canEdit = false,
+  editing = null,
+  onStartEdit,
+  onCancelEdit,
+  onSubmitEdit,
   onContinue,
   continuing,
   after,
@@ -434,6 +521,16 @@ const TranscriptMessage = memo(function TranscriptMessage({
   readonly message: AgentConversationMessage
   readonly continued: boolean
   readonly scrollAnchor: boolean
+  readonly canEdit?: boolean
+  readonly editing?: AgentMessageEditDraft | null
+  readonly onStartEdit?: (messageId: string) => void
+  readonly onCancelEdit?: () => void
+  readonly onSubmitEdit?: (
+    messageId: string,
+    text: string,
+    attachments: readonly AgentFileRef[],
+    context: readonly AgentContextEntryInput[]
+  ) => void
   readonly onContinue?: () => void
   readonly continuing?: boolean
   readonly after?: ReactNode
@@ -443,6 +540,11 @@ const TranscriptMessage = memo(function TranscriptMessage({
       <MessageView
         message={message}
         continued={continued}
+        canEdit={canEdit}
+        editing={editing}
+        onStartEdit={onStartEdit}
+        onCancelEdit={onCancelEdit}
+        onSubmitEdit={onSubmitEdit}
         onContinue={onContinue}
         continuing={continuing}
         after={after}

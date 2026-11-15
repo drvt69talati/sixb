@@ -95,6 +95,8 @@ export interface AgentConversationMessage {
   readonly diagnostics: readonly AgentConversationDiagnostic[]
   /** Earlier turns were condensed before this reply: the summary the agent read instead. */
   readonly compaction?: NonNullable<AgentMessage["compaction"]>
+  /** When the saved message was created (ISO 8601). */
+  readonly createdAt?: string
   /**
    * A reply whose run ended before finishing it: it failed, or someone stopped it. The turn tells
    * only of a turn that ended without any answer.
@@ -111,6 +113,8 @@ export interface PendingUserMessage {
   readonly context: readonly AgentContextEntryInput[]
   /** The saved message's id, once the API accepted it. */
   readonly messageId: string | null
+  /** When editing an earlier message, the id of the saved message this replaces. */
+  readonly replacesMessageId?: string
 }
 
 export interface ConversationMessagesInput {
@@ -154,7 +158,12 @@ export function conversationMessages(input: ConversationMessagesInput): AgentCon
     if (run.status === "failed" || run.status === "cancelled") ended.set(run.id, run.status)
   }
 
-  for (const message of input.messages) {
+  const replaceId = input.pending?.replacesMessageId
+  const replaceAt =
+    replaceId === undefined ? -1 : input.messages.findIndex((message) => message.id === replaceId)
+  const sourceMessages = replaceAt === -1 ? input.messages : input.messages.slice(0, replaceAt)
+
+  for (const message of sourceMessages) {
     if (message.role === "system") continue
 
     savedIds.add(message.id)
@@ -282,6 +291,7 @@ function savedMessage(
     ),
     diagnostics: message.annotations,
     ...(message.compaction ? { compaction: message.compaction } : {}),
+    createdAt: message.createdAt,
   }
 
   savedEntries.set(message, { key, author, observed, message: converted })
@@ -424,6 +434,11 @@ function liveReply(
   savedIds: ReadonlySet<string>,
   answeredRuns: ReadonlySet<string>
 ): AgentConversationMessage | null {
+  // While an in-place edit is replacing an earlier turn and its new run has not been accepted yet,
+  // suppress any live stream left over from the turn being rewound.
+  if (input.pending?.replacesMessageId !== undefined && input.pending.messageId === null) {
+    return null
+  }
   const live = input.live
   if (!live || live.runId === null || live.parts.length === 0) return null
   if (live.finalizedMessageId !== null && savedIds.has(live.finalizedMessageId)) return null

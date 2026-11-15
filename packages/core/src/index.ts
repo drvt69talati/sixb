@@ -1253,6 +1253,7 @@ export type {
   AgentToolTextContent,
   AgentUsageReference,
   AgentWebOptions,
+  EditAgentMessageInput,
   InferAgentToolInput,
   InferAgentToolInputSchema,
   InferAgentToolOutput,

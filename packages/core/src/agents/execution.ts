@@ -67,6 +67,8 @@ import {
 import {
   assertComputerPlaceRequest,
   dispatchAgentRun,
+  type EditAgentMessageInput,
+  editAgentMessage,
   type RequestAgentRunInput,
   type RequestAgentRunResult,
   requestAgentRun,
@@ -86,6 +88,8 @@ import {
 import type { AgentDescriptor } from "./types"
 
 export type ExecutionAgentRequestInput = Omit<RequestAgentRunInput, "principal">
+
+export type ExecutionAgentEditMessageInput = Omit<EditAgentMessageInput, "principal">
 
 export type ListExecutionAgentThreadsInput = Omit<
   ListAgentThreadsInput,
@@ -275,6 +279,11 @@ export interface ObservedAgentThreadsRuntime {
 
 export interface AgentRunsRuntime {
   request(input: ExecutionAgentRequestInput): Promise<ExecutionAgentRunResult>
+  /**
+   * Edit an earlier user message in place, rewinding the thread to that point and starting a new
+   * turn from the edited prompt.
+   */
+  editMessage(input: ExecutionAgentEditMessageInput): Promise<ExecutionAgentRunResult>
   /**
    * Retry a failed or interrupted turn; only whoever asked for it can, as it runs with their rights.
    * A sub-agent's run is never retried: its turn decides whether to spawn it again.
@@ -980,6 +989,28 @@ export function createAgentRuntime<
           ...input,
           principal,
         })
+        return { ...result, run: await attachRunView(runtime, result.run) }
+      },
+      editMessage: async (input) => {
+        assertNoAgentSelector(input)
+        const agent = getAgent()
+        if (!agent) {
+          throw new AgentRequestError("agent_not_found", "[Sixb] The project Agent is unavailable.")
+        }
+        assertAuthorized(runtime, { kind: "agent.run" })
+        if (!(await getVisibleThreadRecord(input.threadId))) {
+          throw new AgentRequestError(
+            "thread_not_found",
+            `[Sixb] Agent thread '${input.threadId}' not found.`
+          )
+        }
+        const result = await editAgentMessage(
+          runtime,
+          execution,
+          turnModels,
+          { ...input, principal },
+          blobStorage
+        )
         return { ...result, run: await attachRunView(runtime, result.run) }
       },
       retry: async (runId) => {

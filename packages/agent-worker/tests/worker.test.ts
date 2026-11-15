@@ -2847,6 +2847,7 @@ function withObservedAgentMessageAppendStorage(
         return agents.messages.append(input)
       },
       deleteByRunId: (input) => agents.messages.deleteByRunId(input),
+      deleteFromSeq: (input) => agents.messages.deleteFromSeq(input),
     },
   })
   return {

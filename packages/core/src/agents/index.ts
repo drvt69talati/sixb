@@ -190,6 +190,9 @@ export type {
 export { runModelLoop } from "./model-loop"
 export { agent } from "./reference"
 export {
+  type EditAgentMessageInput,
+  editAgentMessage,
+  isEditableAgentMessage,
   isRetryableAgentRun,
   type RequestAgentRunInput,
   type RequestAgentRunResult,

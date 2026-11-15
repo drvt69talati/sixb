@@ -77,6 +77,7 @@ export {
   type AgentConversation,
   type AgentConversationMessagesError,
   type AgentConversationSendError,
+  type AgentMessageEditDraft,
   type ConversationComposerProps,
   type UseAgentConversationInput,
   useAgentConversation,

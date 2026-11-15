@@ -485,6 +485,24 @@ export const AgentMessageListResponseSchema = z.object({
   total: z.number(),
 })
 
+export const EditAgentMessageBodySchema = z
+  .object({
+    /** Required unless `attachments` are the whole message. */
+    text: z.string().trim().min(1).optional(),
+    model: LanguageModelRefSchema.optional(),
+    reasoning: ModelReasoningSchema.optional(),
+    /** IANA time zone of the person asking. The Agent presents dates and times in it. */
+    timeZone: z.string().trim().min(1).max(100).optional(),
+    /** BCP 47 language of the person asking. */
+    locale: z.string().trim().min(1).max(100).optional(),
+    /** What this turn may change without asking you. Omitted: your choice in the thread. */
+    approvalMode: AgentApprovalModeSchema.optional(),
+    attachments: z.array(FileRefSchema).optional(),
+    context: z.array(AgentContextEntryInputSchema).max(MAX_AGENT_CONTEXT_ENTRIES).optional(),
+    nextMessageId: z.string().trim().min(1).optional(),
+  })
+  .strict()
+
 export const PostAgentMessageBodySchema = z
   .object({
     /** Required unless `continue` is set or `attachments` are the whole message. */
@@ -564,6 +582,8 @@ export const AgentRunSchema = z.object({
 export const PostAgentMessageResponseSchema = z.object({
   run: AgentRunSchema,
 })
+
+export const EditAgentMessageResponseSchema = PostAgentMessageResponseSchema
 
 export const CancelAgentRunResponseSchema = z.object({
   run: AgentRunSchema,
