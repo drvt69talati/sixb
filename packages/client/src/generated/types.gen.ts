@@ -12788,8 +12788,32 @@ export type ListAgentThreadsResponses = {
       activeRunId: string | null
       lastMessageAt?: string
       messageCount: number
+      lastMessageSeq: number
       createdAt: string
       updatedAt: string
+      read?: {
+        threadId: string
+        throughSeq: number
+        headSeq: number
+        unread: number
+        readAt?: string
+      }
+      lastRun?: {
+        id: string
+        status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+        finishReason?:
+          | "stop"
+          | "length"
+          | "content-filter"
+          | "tool-calls"
+          | "timeout"
+          | "interrupted"
+          | "awaiting_approval"
+          | "awaiting_answer"
+          | "error"
+          | "other"
+          | "unknown"
+      }
       approvalMode?: "manual" | "accept-edits" | "auto"
       approvalModeSource?: "thread" | "default" | "fallback" | "run"
     }>
@@ -12930,8 +12954,32 @@ export type CreateAgentThreadResponses = {
       activeRunId: string | null
       lastMessageAt?: string
       messageCount: number
+      lastMessageSeq: number
       createdAt: string
       updatedAt: string
+      read?: {
+        threadId: string
+        throughSeq: number
+        headSeq: number
+        unread: number
+        readAt?: string
+      }
+      lastRun?: {
+        id: string
+        status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+        finishReason?:
+          | "stop"
+          | "length"
+          | "content-filter"
+          | "tool-calls"
+          | "timeout"
+          | "interrupted"
+          | "awaiting_approval"
+          | "awaiting_answer"
+          | "error"
+          | "other"
+          | "unknown"
+      }
       approvalMode?: "manual" | "accept-edits" | "auto"
       approvalModeSource?: "thread" | "default" | "fallback" | "run"
     }
@@ -13045,8 +13093,32 @@ export type GetAgentThreadResponses = {
     activeRunId: string | null
     lastMessageAt?: string
     messageCount: number
+    lastMessageSeq: number
     createdAt: string
     updatedAt: string
+    read?: {
+      threadId: string
+      throughSeq: number
+      headSeq: number
+      unread: number
+      readAt?: string
+    }
+    lastRun?: {
+      id: string
+      status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+      finishReason?:
+        | "stop"
+        | "length"
+        | "content-filter"
+        | "tool-calls"
+        | "timeout"
+        | "interrupted"
+        | "awaiting_approval"
+        | "awaiting_answer"
+        | "error"
+        | "other"
+        | "unknown"
+    }
     approvalMode?: "manual" | "accept-edits" | "auto"
     approvalModeSource?: "thread" | "default" | "fallback" | "run"
   }
@@ -13185,8 +13257,32 @@ export type AddAgentThreadParticipantsResponses = {
     activeRunId: string | null
     lastMessageAt?: string
     messageCount: number
+    lastMessageSeq: number
     createdAt: string
     updatedAt: string
+    read?: {
+      threadId: string
+      throughSeq: number
+      headSeq: number
+      unread: number
+      readAt?: string
+    }
+    lastRun?: {
+      id: string
+      status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+      finishReason?:
+        | "stop"
+        | "length"
+        | "content-filter"
+        | "tool-calls"
+        | "timeout"
+        | "interrupted"
+        | "awaiting_approval"
+        | "awaiting_answer"
+        | "error"
+        | "other"
+        | "unknown"
+    }
     approvalMode?: "manual" | "accept-edits" | "auto"
     approvalModeSource?: "thread" | "default" | "fallback" | "run"
   }
@@ -13365,8 +13461,32 @@ export type ForkAgentThreadResponses = {
       activeRunId: string | null
       lastMessageAt?: string
       messageCount: number
+      lastMessageSeq: number
       createdAt: string
       updatedAt: string
+      read?: {
+        threadId: string
+        throughSeq: number
+        headSeq: number
+        unread: number
+        readAt?: string
+      }
+      lastRun?: {
+        id: string
+        status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+        finishReason?:
+          | "stop"
+          | "length"
+          | "content-filter"
+          | "tool-calls"
+          | "timeout"
+          | "interrupted"
+          | "awaiting_approval"
+          | "awaiting_answer"
+          | "error"
+          | "other"
+          | "unknown"
+      }
       approvalMode?: "manual" | "accept-edits" | "auto"
       approvalModeSource?: "thread" | "default" | "fallback" | "run"
     }
@@ -13491,8 +13611,32 @@ export type RecreateAgentThreadSandboxResponses = {
     activeRunId: string | null
     lastMessageAt?: string
     messageCount: number
+    lastMessageSeq: number
     createdAt: string
     updatedAt: string
+    read?: {
+      threadId: string
+      throughSeq: number
+      headSeq: number
+      unread: number
+      readAt?: string
+    }
+    lastRun?: {
+      id: string
+      status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+      finishReason?:
+        | "stop"
+        | "length"
+        | "content-filter"
+        | "tool-calls"
+        | "timeout"
+        | "interrupted"
+        | "awaiting_approval"
+        | "awaiting_answer"
+        | "error"
+        | "other"
+        | "unknown"
+    }
     approvalMode?: "manual" | "accept-edits" | "auto"
     approvalModeSource?: "thread" | "default" | "fallback" | "run"
   }
@@ -15314,6 +15458,60 @@ export type CancelAgentRunByIdResponses = {
 export type CancelAgentRunByIdResponse =
   CancelAgentRunByIdResponses[keyof CancelAgentRunByIdResponses]
 
+export type MarkAgentThreadReadData = {
+  body: {
+    throughSeq?: number
+  }
+  path: {
+    threadId: string
+  }
+  query?: never
+  url: "/api/agent/thread-reads/{threadId}"
+}
+
+export type MarkAgentThreadReadErrors = {
+  /**
+   * Response for status 400
+   */
+  400: {
+    error: string
+    code?: string
+  }
+  /**
+   * Response for status 404
+   */
+  404: {
+    error: string
+    code?: string
+  }
+  /**
+   * Response for status 501
+   */
+  501: {
+    error: string
+  }
+}
+
+export type MarkAgentThreadReadError = MarkAgentThreadReadErrors[keyof MarkAgentThreadReadErrors]
+
+export type MarkAgentThreadReadResponses = {
+  /**
+   * Response for status 200
+   */
+  200: {
+    read: {
+      threadId: string
+      throughSeq: number
+      headSeq: number
+      unread: number
+      readAt?: string
+    }
+  }
+}
+
+export type MarkAgentThreadReadResponse =
+  MarkAgentThreadReadResponses[keyof MarkAgentThreadReadResponses]
+
 export type ListAgentThreadChildrenData = {
   body?: never
   path: {
@@ -15620,8 +15818,32 @@ export type MoveAgentThreadToCloudResponses = {
     activeRunId: string | null
     lastMessageAt?: string
     messageCount: number
+    lastMessageSeq: number
     createdAt: string
     updatedAt: string
+    read?: {
+      threadId: string
+      throughSeq: number
+      headSeq: number
+      unread: number
+      readAt?: string
+    }
+    lastRun?: {
+      id: string
+      status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+      finishReason?:
+        | "stop"
+        | "length"
+        | "content-filter"
+        | "tool-calls"
+        | "timeout"
+        | "interrupted"
+        | "awaiting_approval"
+        | "awaiting_answer"
+        | "error"
+        | "other"
+        | "unknown"
+    }
     approvalMode?: "manual" | "accept-edits" | "auto"
     approvalModeSource?: "thread" | "default" | "fallback" | "run"
   }
@@ -15758,8 +15980,32 @@ export type MoveAgentThreadToComputerResponses = {
     activeRunId: string | null
     lastMessageAt?: string
     messageCount: number
+    lastMessageSeq: number
     createdAt: string
     updatedAt: string
+    read?: {
+      threadId: string
+      throughSeq: number
+      headSeq: number
+      unread: number
+      readAt?: string
+    }
+    lastRun?: {
+      id: string
+      status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+      finishReason?:
+        | "stop"
+        | "length"
+        | "content-filter"
+        | "tool-calls"
+        | "timeout"
+        | "interrupted"
+        | "awaiting_approval"
+        | "awaiting_answer"
+        | "error"
+        | "other"
+        | "unknown"
+    }
     approvalMode?: "manual" | "accept-edits" | "auto"
     approvalModeSource?: "thread" | "default" | "fallback" | "run"
   }
@@ -16132,8 +16378,32 @@ export type SetAgentThreadApprovalModeResponses = {
     activeRunId: string | null
     lastMessageAt?: string
     messageCount: number
+    lastMessageSeq: number
     createdAt: string
     updatedAt: string
+    read?: {
+      threadId: string
+      throughSeq: number
+      headSeq: number
+      unread: number
+      readAt?: string
+    }
+    lastRun?: {
+      id: string
+      status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+      finishReason?:
+        | "stop"
+        | "length"
+        | "content-filter"
+        | "tool-calls"
+        | "timeout"
+        | "interrupted"
+        | "awaiting_approval"
+        | "awaiting_answer"
+        | "error"
+        | "other"
+        | "unknown"
+    }
     approvalMode?: "manual" | "accept-edits" | "auto"
     approvalModeSource?: "thread" | "default" | "fallback" | "run"
   }
@@ -17054,8 +17324,32 @@ export type GetObservedAgentThreadResponses = {
     activeRunId: string | null
     lastMessageAt?: string
     messageCount: number
+    lastMessageSeq: number
     createdAt: string
     updatedAt: string
+    read?: {
+      threadId: string
+      throughSeq: number
+      headSeq: number
+      unread: number
+      readAt?: string
+    }
+    lastRun?: {
+      id: string
+      status: "queued" | "running" | "succeeded" | "failed" | "cancelled"
+      finishReason?:
+        | "stop"
+        | "length"
+        | "content-filter"
+        | "tool-calls"
+        | "timeout"
+        | "interrupted"
+        | "awaiting_approval"
+        | "awaiting_answer"
+        | "error"
+        | "other"
+        | "unknown"
+    }
     approvalMode?: "manual" | "accept-edits" | "auto"
     approvalModeSource?: "thread" | "default" | "fallback" | "run"
   }

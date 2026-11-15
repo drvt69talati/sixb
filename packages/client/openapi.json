@@ -37478,11 +37478,66 @@
                           "messageCount": {
                             "type": "number"
                           },
+                          "lastMessageSeq": {
+                            "type": "number"
+                          },
                           "createdAt": {
                             "type": "string"
                           },
                           "updatedAt": {
                             "type": "string"
+                          },
+                          "read": {
+                            "type": "object",
+                            "properties": {
+                              "threadId": {
+                                "type": "string"
+                              },
+                              "throughSeq": {
+                                "type": "number"
+                              },
+                              "headSeq": {
+                                "type": "number"
+                              },
+                              "unread": {
+                                "type": "number"
+                              },
+                              "readAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                            "additionalProperties": false
+                          },
+                          "lastRun": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                              },
+                              "finishReason": {
+                                "type": "string",
+                                "enum": [
+                                  "stop",
+                                  "length",
+                                  "content-filter",
+                                  "tool-calls",
+                                  "timeout",
+                                  "interrupted",
+                                  "awaiting_approval",
+                                  "awaiting_answer",
+                                  "error",
+                                  "other",
+                                  "unknown"
+                                ]
+                              }
+                            },
+                            "required": ["id", "status"],
+                            "additionalProperties": false
                           },
                           "approvalMode": {
                             "type": "string",
@@ -37503,6 +37558,7 @@
                           "status",
                           "activeRunId",
                           "messageCount",
+                          "lastMessageSeq",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -38024,11 +38080,66 @@
                         "messageCount": {
                           "type": "number"
                         },
+                        "lastMessageSeq": {
+                          "type": "number"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
                         "updatedAt": {
                           "type": "string"
+                        },
+                        "read": {
+                          "type": "object",
+                          "properties": {
+                            "threadId": {
+                              "type": "string"
+                            },
+                            "throughSeq": {
+                              "type": "number"
+                            },
+                            "headSeq": {
+                              "type": "number"
+                            },
+                            "unread": {
+                              "type": "number"
+                            },
+                            "readAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                          "additionalProperties": false
+                        },
+                        "lastRun": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                            },
+                            "finishReason": {
+                              "type": "string",
+                              "enum": [
+                                "stop",
+                                "length",
+                                "content-filter",
+                                "tool-calls",
+                                "timeout",
+                                "interrupted",
+                                "awaiting_approval",
+                                "awaiting_answer",
+                                "error",
+                                "other",
+                                "unknown"
+                              ]
+                            }
+                          },
+                          "required": ["id", "status"],
+                          "additionalProperties": false
                         },
                         "approvalMode": {
                           "type": "string",
@@ -38049,6 +38160,7 @@
                         "status",
                         "activeRunId",
                         "messageCount",
+                        "lastMessageSeq",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -38390,11 +38502,66 @@
                     "messageCount": {
                       "type": "number"
                     },
+                    "lastMessageSeq": {
+                      "type": "number"
+                    },
                     "createdAt": {
                       "type": "string"
                     },
                     "updatedAt": {
                       "type": "string"
+                    },
+                    "read": {
+                      "type": "object",
+                      "properties": {
+                        "threadId": {
+                          "type": "string"
+                        },
+                        "throughSeq": {
+                          "type": "number"
+                        },
+                        "headSeq": {
+                          "type": "number"
+                        },
+                        "unread": {
+                          "type": "number"
+                        },
+                        "readAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                      "additionalProperties": false
+                    },
+                    "lastRun": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                        },
+                        "finishReason": {
+                          "type": "string",
+                          "enum": [
+                            "stop",
+                            "length",
+                            "content-filter",
+                            "tool-calls",
+                            "timeout",
+                            "interrupted",
+                            "awaiting_approval",
+                            "awaiting_answer",
+                            "error",
+                            "other",
+                            "unknown"
+                          ]
+                        }
+                      },
+                      "required": ["id", "status"],
+                      "additionalProperties": false
                     },
                     "approvalMode": {
                       "type": "string",
@@ -38415,6 +38582,7 @@
                     "status",
                     "activeRunId",
                     "messageCount",
+                    "lastMessageSeq",
                     "createdAt",
                     "updatedAt"
                   ],
@@ -38881,11 +39049,66 @@
                     "messageCount": {
                       "type": "number"
                     },
+                    "lastMessageSeq": {
+                      "type": "number"
+                    },
                     "createdAt": {
                       "type": "string"
                     },
                     "updatedAt": {
                       "type": "string"
+                    },
+                    "read": {
+                      "type": "object",
+                      "properties": {
+                        "threadId": {
+                          "type": "string"
+                        },
+                        "throughSeq": {
+                          "type": "number"
+                        },
+                        "headSeq": {
+                          "type": "number"
+                        },
+                        "unread": {
+                          "type": "number"
+                        },
+                        "readAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                      "additionalProperties": false
+                    },
+                    "lastRun": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                        },
+                        "finishReason": {
+                          "type": "string",
+                          "enum": [
+                            "stop",
+                            "length",
+                            "content-filter",
+                            "tool-calls",
+                            "timeout",
+                            "interrupted",
+                            "awaiting_approval",
+                            "awaiting_answer",
+                            "error",
+                            "other",
+                            "unknown"
+                          ]
+                        }
+                      },
+                      "required": ["id", "status"],
+                      "additionalProperties": false
                     },
                     "approvalMode": {
                       "type": "string",
@@ -38906,6 +39129,7 @@
                     "status",
                     "activeRunId",
                     "messageCount",
+                    "lastMessageSeq",
                     "createdAt",
                     "updatedAt"
                   ],
@@ -39420,11 +39644,66 @@
                         "messageCount": {
                           "type": "number"
                         },
+                        "lastMessageSeq": {
+                          "type": "number"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
                         "updatedAt": {
                           "type": "string"
+                        },
+                        "read": {
+                          "type": "object",
+                          "properties": {
+                            "threadId": {
+                              "type": "string"
+                            },
+                            "throughSeq": {
+                              "type": "number"
+                            },
+                            "headSeq": {
+                              "type": "number"
+                            },
+                            "unread": {
+                              "type": "number"
+                            },
+                            "readAt": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                          "additionalProperties": false
+                        },
+                        "lastRun": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                            },
+                            "finishReason": {
+                              "type": "string",
+                              "enum": [
+                                "stop",
+                                "length",
+                                "content-filter",
+                                "tool-calls",
+                                "timeout",
+                                "interrupted",
+                                "awaiting_approval",
+                                "awaiting_answer",
+                                "error",
+                                "other",
+                                "unknown"
+                              ]
+                            }
+                          },
+                          "required": ["id", "status"],
+                          "additionalProperties": false
                         },
                         "approvalMode": {
                           "type": "string",
@@ -39445,6 +39724,7 @@
                         "status",
                         "activeRunId",
                         "messageCount",
+                        "lastMessageSeq",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -39844,11 +40124,66 @@
                     "messageCount": {
                       "type": "number"
                     },
+                    "lastMessageSeq": {
+                      "type": "number"
+                    },
                     "createdAt": {
                       "type": "string"
                     },
                     "updatedAt": {
                       "type": "string"
+                    },
+                    "read": {
+                      "type": "object",
+                      "properties": {
+                        "threadId": {
+                          "type": "string"
+                        },
+                        "throughSeq": {
+                          "type": "number"
+                        },
+                        "headSeq": {
+                          "type": "number"
+                        },
+                        "unread": {
+                          "type": "number"
+                        },
+                        "readAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                      "additionalProperties": false
+                    },
+                    "lastRun": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                        },
+                        "finishReason": {
+                          "type": "string",
+                          "enum": [
+                            "stop",
+                            "length",
+                            "content-filter",
+                            "tool-calls",
+                            "timeout",
+                            "interrupted",
+                            "awaiting_approval",
+                            "awaiting_answer",
+                            "error",
+                            "other",
+                            "unknown"
+                          ]
+                        }
+                      },
+                      "required": ["id", "status"],
+                      "additionalProperties": false
                     },
                     "approvalMode": {
                       "type": "string",
@@ -39869,6 +40204,7 @@
                     "status",
                     "activeRunId",
                     "messageCount",
+                    "lastMessageSeq",
                     "createdAt",
                     "updatedAt"
                   ],
@@ -45180,6 +45516,169 @@
         }
       }
     },
+    "/api/agent/thread-reads/{threadId}": {
+      "put": {
+        "summary": "Mark how far you have read an Agent thread",
+        "description": "Record that your reading of a conversation reached a message, or its newest when `throughSeq` is omitted, which is what a Done button sends. It never moves backwards, so another device that read further keeps its place. Session routes only: a runner has no reading.",
+        "tags": ["Agent Threads"],
+        "operationId": "markAgentThreadRead",
+        "security": [
+          {
+            "sixbCsrf": []
+          },
+          {
+            "sixbSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "throughSeq": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "throughSeq": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "throughSeq": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "read": {
+                      "type": "object",
+                      "properties": {
+                        "threadId": {
+                          "type": "string"
+                        },
+                        "throughSeq": {
+                          "type": "number"
+                        },
+                        "headSeq": {
+                          "type": "number"
+                        },
+                        "unread": {
+                          "type": "number"
+                        },
+                        "readAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["read"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Response for status 501",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/agent-threads/{threadId}/children": {
       "get": {
         "summary": "List the sub-agents of an agent conversation",
@@ -45943,11 +46442,66 @@
                     "messageCount": {
                       "type": "number"
                     },
+                    "lastMessageSeq": {
+                      "type": "number"
+                    },
                     "createdAt": {
                       "type": "string"
                     },
                     "updatedAt": {
                       "type": "string"
+                    },
+                    "read": {
+                      "type": "object",
+                      "properties": {
+                        "threadId": {
+                          "type": "string"
+                        },
+                        "throughSeq": {
+                          "type": "number"
+                        },
+                        "headSeq": {
+                          "type": "number"
+                        },
+                        "unread": {
+                          "type": "number"
+                        },
+                        "readAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                      "additionalProperties": false
+                    },
+                    "lastRun": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                        },
+                        "finishReason": {
+                          "type": "string",
+                          "enum": [
+                            "stop",
+                            "length",
+                            "content-filter",
+                            "tool-calls",
+                            "timeout",
+                            "interrupted",
+                            "awaiting_approval",
+                            "awaiting_answer",
+                            "error",
+                            "other",
+                            "unknown"
+                          ]
+                        }
+                      },
+                      "required": ["id", "status"],
+                      "additionalProperties": false
                     },
                     "approvalMode": {
                       "type": "string",
@@ -45968,6 +46522,7 @@
                     "status",
                     "activeRunId",
                     "messageCount",
+                    "lastMessageSeq",
                     "createdAt",
                     "updatedAt"
                   ],
@@ -46341,11 +46896,66 @@
                     "messageCount": {
                       "type": "number"
                     },
+                    "lastMessageSeq": {
+                      "type": "number"
+                    },
                     "createdAt": {
                       "type": "string"
                     },
                     "updatedAt": {
                       "type": "string"
+                    },
+                    "read": {
+                      "type": "object",
+                      "properties": {
+                        "threadId": {
+                          "type": "string"
+                        },
+                        "throughSeq": {
+                          "type": "number"
+                        },
+                        "headSeq": {
+                          "type": "number"
+                        },
+                        "unread": {
+                          "type": "number"
+                        },
+                        "readAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                      "additionalProperties": false
+                    },
+                    "lastRun": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                        },
+                        "finishReason": {
+                          "type": "string",
+                          "enum": [
+                            "stop",
+                            "length",
+                            "content-filter",
+                            "tool-calls",
+                            "timeout",
+                            "interrupted",
+                            "awaiting_approval",
+                            "awaiting_answer",
+                            "error",
+                            "other",
+                            "unknown"
+                          ]
+                        }
+                      },
+                      "required": ["id", "status"],
+                      "additionalProperties": false
                     },
                     "approvalMode": {
                       "type": "string",
@@ -46366,6 +46976,7 @@
                     "status",
                     "activeRunId",
                     "messageCount",
+                    "lastMessageSeq",
                     "createdAt",
                     "updatedAt"
                   ],
@@ -47612,11 +48223,66 @@
                     "messageCount": {
                       "type": "number"
                     },
+                    "lastMessageSeq": {
+                      "type": "number"
+                    },
                     "createdAt": {
                       "type": "string"
                     },
                     "updatedAt": {
                       "type": "string"
+                    },
+                    "read": {
+                      "type": "object",
+                      "properties": {
+                        "threadId": {
+                          "type": "string"
+                        },
+                        "throughSeq": {
+                          "type": "number"
+                        },
+                        "headSeq": {
+                          "type": "number"
+                        },
+                        "unread": {
+                          "type": "number"
+                        },
+                        "readAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                      "additionalProperties": false
+                    },
+                    "lastRun": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                        },
+                        "finishReason": {
+                          "type": "string",
+                          "enum": [
+                            "stop",
+                            "length",
+                            "content-filter",
+                            "tool-calls",
+                            "timeout",
+                            "interrupted",
+                            "awaiting_approval",
+                            "awaiting_answer",
+                            "error",
+                            "other",
+                            "unknown"
+                          ]
+                        }
+                      },
+                      "required": ["id", "status"],
+                      "additionalProperties": false
                     },
                     "approvalMode": {
                       "type": "string",
@@ -47637,6 +48303,7 @@
                     "status",
                     "activeRunId",
                     "messageCount",
+                    "lastMessageSeq",
                     "createdAt",
                     "updatedAt"
                   ],
@@ -50154,11 +50821,66 @@
                     "messageCount": {
                       "type": "number"
                     },
+                    "lastMessageSeq": {
+                      "type": "number"
+                    },
                     "createdAt": {
                       "type": "string"
                     },
                     "updatedAt": {
                       "type": "string"
+                    },
+                    "read": {
+                      "type": "object",
+                      "properties": {
+                        "threadId": {
+                          "type": "string"
+                        },
+                        "throughSeq": {
+                          "type": "number"
+                        },
+                        "headSeq": {
+                          "type": "number"
+                        },
+                        "unread": {
+                          "type": "number"
+                        },
+                        "readAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["threadId", "throughSeq", "headSeq", "unread"],
+                      "additionalProperties": false
+                    },
+                    "lastRun": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+                        },
+                        "finishReason": {
+                          "type": "string",
+                          "enum": [
+                            "stop",
+                            "length",
+                            "content-filter",
+                            "tool-calls",
+                            "timeout",
+                            "interrupted",
+                            "awaiting_approval",
+                            "awaiting_answer",
+                            "error",
+                            "other",
+                            "unknown"
+                          ]
+                        }
+                      },
+                      "required": ["id", "status"],
+                      "additionalProperties": false
                     },
                     "approvalMode": {
                       "type": "string",
@@ -50179,6 +50901,7 @@
                     "status",
                     "activeRunId",
                     "messageCount",
+                    "lastMessageSeq",
                     "createdAt",
                     "updatedAt"
                   ],

@@ -2737,6 +2737,7 @@ function withFlakyAgentFinishStorage(storage: Storage, failTimes: number): Stora
   let fails = 0
   const wrapAgents = (agents: AgentStorage): AgentStorage => ({
     threads: agents.threads,
+    reads: agents.reads,
     messages: agents.messages,
     checkpoints: agents.checkpoints,
     memory: agents.memory,
@@ -2755,6 +2756,7 @@ function withFlakyAgentFinishStorage(storage: Storage, failTimes: number): Stora
       getById: (params) => agents.runs.getById(params),
       getByIds: (params) => agents.runs.getByIds(params),
       listThreadSubagents: (input) => agents.runs.listThreadSubagents(input),
+      latestByThread: (input) => agents.runs.latestByThread(input),
       list: (input) => agents.runs.list(input),
       finish: (input) => {
         if (fails < failTimes) {
@@ -2786,6 +2788,7 @@ function withAlwaysFailingTransactionalFinish(storage: Storage): Storage {
   }
   const wrapAgents = (agents: AgentStorage): AgentStorage => ({
     threads: agents.threads,
+    reads: agents.reads,
     messages: agents.messages,
     checkpoints: agents.checkpoints,
     memory: agents.memory,
@@ -2804,6 +2807,7 @@ function withAlwaysFailingTransactionalFinish(storage: Storage): Storage {
       getById: (params) => agents.runs.getById(params),
       getByIds: (params) => agents.runs.getByIds(params),
       listThreadSubagents: (input) => agents.runs.listThreadSubagents(input),
+      latestByThread: (input) => agents.runs.latestByThread(input),
       list: (input) => agents.runs.list(input),
       finish: () => Promise.reject(new Error("storage down after message generation")),
     },
@@ -2832,6 +2836,7 @@ function withObservedAgentMessageAppendStorage(
   }
   const wrapAgents = (agents: AgentStorage): AgentStorage => ({
     threads: agents.threads,
+    reads: agents.reads,
     runs: agents.runs,
     checkpoints: agents.checkpoints,
     memory: agents.memory,
