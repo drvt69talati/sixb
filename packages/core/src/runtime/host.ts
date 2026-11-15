@@ -23,8 +23,12 @@ import {
 } from "../auth"
 import type { BlobStorage } from "../blob-storage"
 import type { Broker } from "../broker"
-import { registerConnectorConnectionCallbackProcess } from "../connectors/connections/capability"
+import {
+  registerConnectorConnectionCallbackProcess,
+  registerSandboxConnectionTokenAccess,
+} from "../connectors/connections/capability"
 import { createConnectorCredentialProtectorFromKey } from "../connectors/credentials"
+import { assertPersonalConnectionRequester } from "../connectors/execution"
 import { ConnectorService } from "../connectors/service"
 import {
   type ConnectorConnectionOptions,
@@ -320,6 +324,10 @@ export class SixbHost<in out TParams extends ParamsConfig = ParamsConfig> {
         this.connectorService.connectionProcess.callbackProcess
       )
     }
+    registerSandboxConnectionTokenAccess(this, ({ connector, selector, requestedBy }) => {
+      assertPersonalConnectionRequester(connector, requestedBy, selector)
+      return this.connectorService.createConnectionTokenSource(connector, selector)
+    })
     assertWebhookRunStorage(connectors, this.storage)
     this.webhookRegistry = new WebhookRegistry({ connectors })
 
