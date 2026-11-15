@@ -4780,6 +4780,12 @@ export type TranscribeAudioResponses = {
       reason?: string
     }
     text: string
+    words?: Array<{
+      text: string
+      startMs: number
+      endMs: number
+      speaker?: string
+    }>
   }
 }
 
