@@ -81,9 +81,11 @@ export {
   type UseAgentConversationInput,
   useAgentConversation,
 } from "./agent/hooks/use-agent-conversation"
+export { useAgentThreadLists } from "./agent/hooks/use-thread-lists"
 export type { AskedQuestion } from "./agent/questions/interpret"
 export { QuestionComposer, type QuestionComposerProps } from "./agent/questions/question-composer"
 export { AgentChatPage, type AgentChatPageProps } from "./agent/react-router"
+export { type AgentThreadState, agentThreadState } from "./agent/thread-state"
 export {
   type AgentToolView,
   type AgentToolViewPlacement,
@@ -97,6 +99,8 @@ export type {
   AgentRun,
   AgentThread,
   AgentThreadContext,
+  AgentThreadLastRun,
+  AgentThreadRead,
   AgentThreadSandboxParams,
   LanguageModel,
 } from "./agent/types"
