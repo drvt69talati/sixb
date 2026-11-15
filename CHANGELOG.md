@@ -6,6 +6,12 @@ Sixb packages are versioned independently. Each release entry names the packages
 
 ### Highlights
 
+- A conversation remembers how far each person has read it. `sixb.agent.threads.markRead()`
+  records the message `seq` a reader reached, or the thread's newest, and the thread `list()` and
+  `getById()` return carries `read` (the head and what is unread) plus `lastRun`; `@sixb/app`'s
+  `agentThreadState()` turns those and a pending approval into needs you, working, finished or
+  idle. Opening a thread on one device clears it on the others, and a participant starts caught up
+  when they join.
 - Read Meta ad accounts and their delivery with `@sixb/connector-meta`'s `client.ads`: a business
   portfolio's owned, partner-shared and pending ad accounts, `/me/adaccounts`, campaigns, ad sets,
   ads and creatives, and Ads Insights by level, day and breakdown, including Ads Manager's
@@ -33,6 +39,10 @@ Sixb packages are versioned independently. Each release entry names the packages
 
 ### Upgrade notes
 
+- `AgentThreadRecord` has `lastMessageSeq`, the highest message `seq` a thread ever assigned. A
+  retried turn's deleted messages no longer give their numbers back to the retry, so a reader's
+  place can never skip a new message. `AgentStorage` gains a `reads` store and `AgentRunStore` a
+  `latestByThread`; the bundled providers and their migrations are updated.
 - `MetaClient` has a new `ads` member; Page and Instagram clients have none. A project type that
   omits members from `MetaClient` to describe those clients (`Omit<MetaClient, "pages">`) omits
   `"ads"` too.
