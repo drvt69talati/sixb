@@ -474,6 +474,8 @@ export const postgresStorageMigrations = defineMigrations<PostgresMigrationConte
     pgSql("101-connector-connection-owners", connectorConnectionOwnersSql),
     pgSql("102-user-suspension-source", userSuspensionSourceSql),
     pgSql("103-script-executions", scriptExecutionsSql),
+    pgSql("104-artifact-pdfs", artifactPdfsSql),
+    pgSql("105-guest-comment-links", guestCommentLinksSql),
   ],
 })
 
@@ -577,3 +579,5 @@ import userSuspensionSourceSql from "./migrations/102-user-suspension-source.sql
   type: "text",
 }
 import scriptExecutionsSql from "./migrations/103-script-executions.sql" with { type: "text" }
+import artifactPdfsSql from "./migrations/104-artifact-pdfs.sql" with { type: "text" }
+import guestCommentLinksSql from "./migrations/105-guest-comment-links.sql" with { type: "text" }

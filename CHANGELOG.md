@@ -11,6 +11,25 @@ Sixb packages are versioned independently. Each release entry names the packages
   ads and creatives, and Ads Insights by level, day and breakdown, including Ads Manager's
   `results` and `cost_per_result`. Marketing API limits (codes 80000–80014) are retried like
   Graph throttling.
+- Register an Azure AI Foundry deployment of `Microsoft-Decision-1` in `models.decision` with
+  `@sixb/azure-ai-foundry`'s `foundry.decision("decision-1")`. `sixb.models.decision.evaluate()`
+  and chat's Auto tier routing then run inside your Azure tenant, priced at Azure's USD 0.042 per
+  million input tokens. `@sixb/typesafe` and Foundry share one System One codec.
+- Register an Azure AI Foundry transcription deployment in `models.audio.transcription` with
+  `@sixb/azure-ai-foundry`'s `foundry.transcription("transcribe")`: `gpt-4o-transcribe`,
+  `gpt-4o-mini-transcribe`, `gpt-transcribe` and `whisper` are priced at Azure's retail rates, by
+  token or audio second; `gpt-4o-transcribe-diarize`, which has no retail price, returns its text
+  at unknown cost.
+- Rerank search results with an Azure AI Foundry Cohere deployment through `@sixb/azure-ai-foundry`'s
+  `foundry.reranking("rerank")`. Rerank v5 is priced at Azure's USD 0.02 (fast) and 0.05 (pro) per
+  million input tokens; Rerank v4.0, billed per search, runs at unknown cost.
+- Generate speech with an Azure AI Foundry `gpt-4o-mini-tts` deployment in `models.audio.speech`
+  through `@sixb/azure-ai-foundry`'s `foundry.speech("tts")`, in MP3, Opus, AAC, FLAC or WAV,
+  priced at Azure's USD 0.60 per million text tokens and USD 12 per million audio tokens.
+- Generate and edit images with an Azure AI Foundry GPT Image, FLUX.1 Kontext [pro] or FLUX1.1 [pro]
+  deployment in `models.image` through `@sixb/azure-ai-foundry`'s `foundry.image("image")`.
+  Generations are priced at Azure's retail rates, per token or per image; GPT Image edits run at
+  unknown cost.
 
 ### Upgrade notes
 

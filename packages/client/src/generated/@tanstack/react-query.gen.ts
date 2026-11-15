@@ -72,6 +72,7 @@ import {
   getArtifact,
   getArtifactBoardPreview,
   getArtifactFileContent,
+  getArtifactPdf,
   getArtifactQuery,
   getArtifactRestorePoint,
   getArtifactRestorePointFileContent,
@@ -176,6 +177,7 @@ import {
   moveAgentThreadToComputer,
   type Options,
   postAgentThreadMessage,
+  printArtifactPdf,
   queryObjectLinks,
   queryObjects,
   reactivateAuthMember,
@@ -405,6 +407,9 @@ import type {
   GetArtifactFileContentData,
   GetArtifactFileContentError,
   GetArtifactFileContentResponse,
+  GetArtifactPdfData,
+  GetArtifactPdfError,
+  GetArtifactPdfResponse,
   GetArtifactQueryData,
   GetArtifactQueryError,
   GetArtifactQueryResponse,
@@ -703,6 +708,9 @@ import type {
   PostAgentThreadMessageData,
   PostAgentThreadMessageError,
   PostAgentThreadMessageResponse,
+  PrintArtifactPdfData,
+  PrintArtifactPdfError,
+  PrintArtifactPdfResponse,
   QueryObjectLinksData,
   QueryObjectLinksError,
   QueryObjectLinksResponse,
@@ -6453,7 +6461,7 @@ export const listArtifactCommentsQueryKey = (options: Options<ListArtifactCommen
 /**
  * List an artifact's comments
  *
- * Every comment and reply, oldest first, resolved ones included. Whoever reads the artifact reads them.
+ * Every comment and reply, oldest first, resolved ones included. Whoever reads the artifact reads them; a shared link's guest reads only the threads started by a guest of the same link, with every reply in them.
  */
 export const listArtifactCommentsOptions = (options: Options<ListArtifactCommentsData>) =>
   queryOptions<
@@ -6477,7 +6485,7 @@ export const listArtifactCommentsOptions = (options: Options<ListArtifactComment
 /**
  * Comment on an artifact
  *
- * Adds a comment, or a reply with parentId, as the caller. Whoever reads the artifact may, a shared link's guest included, under the name they gave its session (400 name_required until they give one). A canvas's comment can be about one of its boards, or an element of a board by its address. Readers receive artifact.commented.
+ * Adds a comment, or a reply with parentId, as the caller. Whoever reads the artifact may, a shared link's guest included, under the name they gave its session (400 name_required until they give one), and replies only in a thread they read (404 comment_not_found otherwise). A canvas's comment can be about one of its boards, or an element of a board by its address. Readers of the thread receive artifact.commented.
  */
 export const addArtifactCommentMutation = (
   options?: Partial<Options<AddArtifactCommentData>>
@@ -6729,6 +6737,62 @@ export const getArtifactVersionOptions = (options: Options<GetArtifactVersionDat
     queryKey: getArtifactVersionQueryKey(options),
   })
 
+export const getArtifactPdfQueryKey = (options: Options<GetArtifactPdfData>) =>
+  createQueryKey("getArtifactPdf", options)
+
+/**
+ * Get a designed document's PDF
+ *
+ * The version printed to PDF, with the values its fields read as the caller reads them, as a download named after the title it printed with: for a document that shows live data, those its POST's key names. 404 pdf_not_found until it is printed: ask for it with POST first. A frozen version's PDF never changes, and is cached as such.
+ */
+export const getArtifactPdfOptions = (options: Options<GetArtifactPdfData>) =>
+  queryOptions<
+    GetArtifactPdfResponse,
+    GetArtifactPdfError,
+    GetArtifactPdfResponse,
+    ReturnType<typeof getArtifactPdfQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getArtifactPdf({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getArtifactPdfQueryKey(options),
+  })
+
+/**
+ * Print a designed document to PDF
+ *
+ * Answers ready once the version is printed, and printing until then, having asked for it: ask again after a few seconds, then get it. Failed with why when it could not be printed; retry=true asks again. A document that shows live data answers with a key: ask again and get it with that key, which names the values the first ask printed. It prints as its stylesheets' @page rule lays it out, in a sandbox of the project. Whoever reads the artifact may ask. 400 invalid_artifact when the version is not a designed document; 501 pdf_unavailable in a project without sandboxes.
+ */
+export const printArtifactPdfMutation = (
+  options?: Partial<Options<PrintArtifactPdfData>>
+): UseMutationOptions<
+  PrintArtifactPdfResponse,
+  PrintArtifactPdfError,
+  Options<PrintArtifactPdfData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PrintArtifactPdfResponse,
+    PrintArtifactPdfError,
+    Options<PrintArtifactPdfData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await printArtifactPdf({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
 export const getArtifactBoardPreviewQueryKey = (options: Options<GetArtifactBoardPreviewData>) =>
   createQueryKey("getArtifactBoardPreview", options)
 
@@ -6762,7 +6826,7 @@ export const getArtifactQueryQueryKey = (options: Options<GetArtifactQueryData>)
 /**
  * Run an artifact's query
  *
- * Runs the version's queries/<name>.json as the caller, with their rights: a type they cannot view is refused with 403, and a marked property they are not cleared for is left out of each row. Rows are serialized as POST /api/objects/query returns them, beside the schema of what they hold as the caller may view it. Use "latest" for the newest version. A query the ontology no longer admits is refused with 409 query_invalid.
+ * Runs the version's queries/<name>.json as the caller, with their rights: a type they cannot view is refused with 403, and a marked property they are not cleared for is left out of each row. Rows are serialized as POST /api/objects/query returns them, beside the schema of what they hold as the caller may view it. Use "latest" for the newest version. A query the ontology no longer admits is refused with 409 query_invalid. A designed document's "holder" is the object that holds it, of the type it names, with the links its fields read through: 404 holder_not_found when no one such object the caller reads holds it.
  */
 export const getArtifactQueryOptions = (options: Options<GetArtifactQueryData>) =>
   queryOptions<
