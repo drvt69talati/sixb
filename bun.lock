@@ -1156,6 +1156,18 @@
         "@sixb/core": "workspace:^",
       },
     },
+    "sandboxes/kosa8": {
+      "name": "@sixb/sandboxes-kosa8",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@sixb/core": "workspace:*",
+        "@types/bun": "latest",
+        "typescript": "^5.7.0",
+      },
+      "peerDependencies": {
+        "@sixb/core": "workspace:^",
+      },
+    },
     "sandboxes/local": {
       "name": "@sixb/sandboxes-local",
       "version": "0.2.0",
@@ -1960,6 +1972,8 @@
     "@sixb/sandboxes-azure": ["@sixb/sandboxes-azure@workspace:sandboxes/azure"],
 
     "@sixb/sandboxes-boxd": ["@sixb/sandboxes-boxd@workspace:sandboxes/boxd"],
+
+    "@sixb/sandboxes-kosa8": ["@sixb/sandboxes-kosa8@workspace:sandboxes/kosa8"],
 
     "@sixb/sandboxes-local": ["@sixb/sandboxes-local@workspace:sandboxes/local"],
 

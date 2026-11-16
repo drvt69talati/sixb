@@ -207,6 +207,7 @@
       "@sixb/sandboxes-apple-container": ["./sandboxes/apple-container/src/index.ts"],
       "@sixb/sandboxes-azure": ["./sandboxes/azure/src/index.ts"],
       "@sixb/sandboxes-boxd": ["./sandboxes/boxd/src/index.ts"],
+      "@sixb/sandboxes-kosa8": ["./sandboxes/kosa8/src/index.ts"],
       "@sixb/sandboxes-local": ["./sandboxes/local/src/index.ts"],
       "@sixb/sandboxes-smolvm": ["./sandboxes/smolvm/src/index.ts"],
       "@sixb/sandboxes-vercel": ["./sandboxes/vercel/src/index.ts"],

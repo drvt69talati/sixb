@@ -88,5 +88,13 @@ export const providerCatalog: Record<"models" | "sandboxes", readonly ProviderEn
       icon: "boxd.svg",
       environment: "Hosted",
     },
+    {
+      name: "kosa8",
+      description: "Run tools in hosted microVMs that sleep with their memory and wake on resume.",
+      package: "@sixb/sandboxes-kosa8",
+      href: "https://github.com/sixb-ai/sixb/tree/main/sandboxes/kosa8#readme",
+      icon: "kosa8.svg",
+      environment: "Hosted · Preview",
+    },
   ],
 }
