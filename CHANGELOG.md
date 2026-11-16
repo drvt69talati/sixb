@@ -30,6 +30,10 @@ Sixb packages are versioned independently. Each release entry names the packages
   deployment in `models.image` through `@sixb/azure-ai-foundry`'s `foundry.image("image")`.
   Generations are priced at Azure's retail rates, per token or per image; GPT Image edits run at
   unknown cost.
+- Let a server on an Azure VM read its Key Vault with the VM's managed identity:
+  `azureKeyVault({ vaults, server: { identity: "managed" } })`, with a `clientId` for a
+  user-assigned identity. `sixb deploy setup` then creates no app registration and no secret that
+  expires, and a deploy the vault refuses prints the command that grants the identity access.
 
 ### Upgrade notes
 
