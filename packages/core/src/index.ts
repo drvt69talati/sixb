@@ -749,6 +749,8 @@ export type {
   BatchSyncDefinitionConfig,
   DatasetSyncTarget,
   RequestSyncRunInput,
+  SyncAccount,
+  SyncAccountsRuntime,
   SyncBuilder,
   SyncConnectorConnection,
   SyncDefinition,
