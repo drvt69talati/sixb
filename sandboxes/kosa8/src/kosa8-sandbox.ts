@@ -309,6 +309,8 @@ export class Kosa8Sandbox implements Sandbox {
 
     try {
       const exitCode = await stream.wait()
+      // A cancelled command's stream can end cleanly: still wait until its processes are gone.
+      if (killed) await ended
       return {
         exitCode: killed && exitCode === 0 ? KILLED_EXIT_CODE : exitCode,
         stdout: await stdout,

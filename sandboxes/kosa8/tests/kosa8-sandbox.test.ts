@@ -151,7 +151,9 @@ describe("commands", () => {
 
     expect(result).toMatchObject({ exitCode: 3, stdout: "out", stderr: "err" })
     const argv = kosa8.execs.at(-1)?.argv ?? []
-    expect(argv.slice(0, 2)).toEqual(["/usr/bin/env", "-i"])
+    // Root records the run's process id, then execs into a clean env and drops privileges.
+    expect(argv.slice(0, 2)).toEqual(["/bin/sh", "-c"])
+    expect(argv.slice(5, 7)).toEqual(["/usr/bin/env", "-i"])
     expect(argv).toContain("--reuid=65534")
     expect(argv).toContain("--no-new-privs")
     expect(argv).toContain(`HOME=${GUEST_PATHS.home}`)
@@ -181,7 +183,9 @@ describe("commands", () => {
     const marker = kosa8.execs.at(-2)?.argv.find((arg) => arg.startsWith(`${RUN_MARKER}=`))
     const end = kosa8.execs.at(-1)
     expect(end?.argv.slice(0, 2)).toEqual(["/bin/bash", "-c"])
-    expect(end?.argv.at(-1)).toBe(marker)
+    // The marker, and the run whose recorded process id seeds the search.
+    expect(end?.argv.at(-2)).toBe(marker)
+    expect(end?.argv.at(-1)).toBe(marker?.slice(`${RUN_MARKER}=`.length))
   })
 
   test("abort kills the command without marking it timed out", async () => {

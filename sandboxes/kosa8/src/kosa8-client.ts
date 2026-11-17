@@ -143,7 +143,12 @@ export function createKosa8Client(options: Kosa8ClientOptions = {}): Kosa8Client
         (
           await json<{ sandbox: Kosa8SandboxRecord }>("POST", "/v1/sandboxes", {
             name: request.name,
-            size: request.size,
+            // A plain create takes the universal-<size> template: kosa8's Ubuntu 24.04 image, kept
+            // warm (a size alone boots the minimal Alpine base, whose BusyBox setpriv cannot drop
+            // to another uid). An image, docker or a disk size needs a sandbox booted for it.
+            ...(request.image === undefined && !request.docker && request.diskGb === undefined
+              ? { template: `universal-${request.size}` }
+              : { size: request.size }),
             labels: request.labels,
             // Every command runs in one long-lived container, so files and processes last.
             persistent: true,

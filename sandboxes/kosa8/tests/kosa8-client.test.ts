@@ -78,6 +78,36 @@ test("creates a persistent sandbox that never sleeps on its own, with the key as
   })
 })
 
+test("a plain create takes the warm universal template of its size", async () => {
+  const { seen, fetcher } = fakeFetch(() =>
+    json(202, { sandbox: { id: "sbx_2", name: "sixb-b", state: "creating", labels: {} } })
+  )
+  await createKosa8Client({ apiKey: "k8_test", fetch: fetcher }).create({
+    name: "sixb-b",
+    size: "4x8",
+    labels: {},
+  })
+  const body = JSON.parse(seen[0]?.body ?? "")
+  expect(body.template).toBe("universal-4x8")
+  expect(body.size).toBeUndefined()
+})
+
+test("an image keeps the size and boots that image", async () => {
+  const { seen, fetcher } = fakeFetch(() =>
+    json(202, { sandbox: { id: "sbx_3", name: "sixb-c", state: "creating", labels: {} } })
+  )
+  await createKosa8Client({ apiKey: "k8_test", fetch: fetcher }).create({
+    name: "sixb-c",
+    size: "2x4",
+    image: "node:22",
+    labels: {},
+  })
+  const body = JSON.parse(seen[0]?.body ?? "")
+  expect(body.template).toBeUndefined()
+  expect(body.size).toBe("2x4")
+  expect(body.image).toBe("node:22")
+})
+
 test("reads an API refusal's status and code", async () => {
   const { fetcher } = fakeFetch(() =>
     json(404, { error: "not_found", message: "no sandbox sbx_9" })

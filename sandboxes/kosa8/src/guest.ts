@@ -21,13 +21,31 @@ export const GUEST_PATHS = {
    * directory is there, root's own, and /workspace itself stays root's so it can't be swapped.
    */
   files: "/workspace/.sixb-files",
+  /** The image's environment, as root saw it at bootstrap: the base for every command. */
+  imageEnv: "/var/lib/sixb-image.env",
+  /** Root-only: the top process id of each run, for {@link endRunCommand}. */
+  runs: "/var/lib/sixb-runs",
 } as const
 
 /** The kosa8 files API's root, kept root-owned: commands get a directory inside it. */
 export const FILES_ROOT = "/workspace"
 export const DEFAULT_WORKING_DIRECTORY = "/workspace/sixb"
 
-const GUEST_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+// The toolchain directories of kosa8's universal image come first (mise's Node, Bun and Python
+// shims, Python, Rust, Go, Java); on another image they do not exist and cost nothing.
+const GUEST_PATH = [
+  "/opt/mise/shims",
+  "/opt/python/bin",
+  "/opt/rust/cargo/bin",
+  "/usr/local/go/bin",
+  "/opt/java/temurin-21/bin",
+  "/usr/local/sbin",
+  "/usr/local/bin",
+  "/usr/sbin",
+  "/usr/bin",
+  "/sbin",
+  "/bin",
+].join(":")
 
 /** Every process a command starts carries this, so a cancelled command can be ended. */
 export const RUN_MARKER = "SIXB_KOSA8_RUN"
@@ -41,7 +59,14 @@ install -d -o root -g root -m 755 -- ${FILES_ROOT}
 mkdir -p -- "$1"
 chown ${GUEST_COMMAND_UID}:${GUEST_COMMAND_UID} -- "$1"
 install -d -o ${GUEST_COMMAND_UID} -g ${GUEST_COMMAND_UID} -m 700 -- "$2"
-install -d -o root -g root -m 711 -- "$3"`
+install -d -o root -g root -m 711 -- "$3"
+install -d -o root -g root -m 700 -- ${GUEST_PATHS.runs}
+# The image's own environment (its toolchains' settings), less what is per-user or set per run.
+env | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' |
+  grep -vE '^(HOME|PWD|OLDPWD|HOSTNAME|SHLVL|_|USER|LOGNAME|MAIL|TERM|PATH|${RUN_MARKER})=' \
+  > ${GUEST_PATHS.imageEnv}.tmp || true
+chmod 644 -- ${GUEST_PATHS.imageEnv}.tmp
+mv -f -- ${GUEST_PATHS.imageEnv}.tmp ${GUEST_PATHS.imageEnv}`
 
 /** Prepare the sandbox: the working directory and HOME for commands, and the staging area. */
 export function bootstrapCommand(workingDirectory: string): Kosa8Exec {
@@ -60,10 +85,22 @@ export function bootstrapCommand(workingDirectory: string): Kosa8Exec {
 
 // Change directory as the command user, so a directory only it can enter still works, and name a
 // missing one instead of the program.
-const COMMAND_SCRIPT = `cd -- "$1" 2>/dev/null || {
+const COMMAND_SCRIPT = `if [ -r ${GUEST_PATHS.imageEnv} ]; then
+  while IFS= read -r line; do
+    name=\${line%%=*}
+    eval "[ -n \\"\\\${$name+x}\\" ]" || export "$line"
+  done < ${GUEST_PATHS.imageEnv}
+  unset line name
+fi
+cd -- "$1" 2>/dev/null || {
   printf "[Sandbox] working directory '%s' does not exist or is not a directory\\n" "$1" >&2
   exit 1
 }
+shift
+exec "$@"`
+
+// Root notes the run's process id, then execs into it: the id stays, privileges drop after.
+const RECORD_RUN_SCRIPT = `printf '%s\\n' "$$" > "${GUEST_PATHS.runs}/$1" 2>/dev/null || true
 shift
 exec "$@"`
 
@@ -80,6 +117,11 @@ export function unprivilegedCommand(
 ): Kosa8Exec {
   return {
     argv: [
+      "/bin/sh",
+      "-c",
+      RECORD_RUN_SCRIPT,
+      "sh",
+      run,
       ...commandEnv(run, env),
       ...unprivilegedGuestArgv("/bin/sh", ["-c", COMMAND_SCRIPT, "sh", cwd, command, ...args]),
     ],
@@ -177,6 +219,11 @@ const END_RUN_SCRIPT = `scan() {
     parent[$p]=\${rest%% *}
     grep -qzxF -- "$1" "$p/environ" 2>/dev/null && pids="$pids$p "
   done
+  # A process that dropped privileges is not dumpable: root without CAP_SYS_PTRACE cannot read
+  # its environ, so the run's recorded top process is the dependable seed.
+  if [ -n "$top" ] && [ -n "\${parent[$top]+x}" ]; then
+    case "$pids" in *" $top "*) ;; *) pids="$pids$top " ;; esac
+  fi
   [ "$pids" = " " ] && { pids=""; return 0; }
   while [ -n "$grew" ]; do
     grew=""
@@ -186,7 +233,13 @@ const END_RUN_SCRIPT = `scan() {
     done
   done
 }
+top=""
+[ -r "${GUEST_PATHS.runs}/$2" ] && read -r top < "${GUEST_PATHS.runs}/$2"
+rm -f -- "${GUEST_PATHS.runs}/$2"
+case "$top" in *[!0-9]*) top="" ;; esac
 scan "$1"; [ -n "$pids" ] || exit 0
+kill -STOP $pids 2>/dev/null
+scan "$1"
 kill -KILL $pids 2>/dev/null
 for i in 1 2 3 4 5; do sleep 0.2; scan "$1"; [ -n "$pids" ] || exit 0; kill -KILL $pids 2>/dev/null; done
 echo "processes survived KILL:$pids" >&2
@@ -194,7 +247,7 @@ exit 3`
 
 /** Kill what a run started. Closing kosa8's exec stream only stops listening. */
 export function endRunCommand(run: string): Kosa8Exec {
-  return { argv: ["/bin/bash", "-c", END_RUN_SCRIPT, "end-run", `${RUN_MARKER}=${run}`] }
+  return { argv: ["/bin/bash", "-c", END_RUN_SCRIPT, "end-run", `${RUN_MARKER}=${run}`, run] }
 }
 
 function commandEnv(run: string, env: Readonly<Record<string, string>>): string[] {
